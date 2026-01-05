@@ -60,7 +60,7 @@ function App(){
                   <p>{isCheckLogin }</p>
               </div>
 
-              <div className="ver">  Ver 0.3 </div>
+              <div className="ver">  Ver 0.4 </div>
             </div>
         </div>
     );
