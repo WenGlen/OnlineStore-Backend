@@ -42,27 +42,26 @@ function App(){
     // ====== 實際回傳內容 ======
     return (
         <div className="page-container">
-            <h1>某電商後台管理系統</h1>
+          <div className="layout-center">
+              <h1>某電商後台管理系統</h1>
+
+              {isLogIn ?(
+                  <BackendManagement url={url} path={path}/>
+              ):(
+                  <Login url={url} path={path} setIsLogIn={setIsLogIn} />
+              )}
 
 
+              <div className="debug">
+                  <button type="button" onClick={() => (setIsLogIn(!isLogIn))}>
+                      {isLogIn ? "登出" : "跳過登入"}
+                  </button>
+                  <button type="button" onClick={() => (checkLogin())}>確認是否登入過</button>
+                  <p>{isCheckLogin }</p>
+              </div>
 
-            {isLogIn ?(
-                <BackendManagement url={url} path={path}/>
-            ):(
-                <Login url={url} path={path} setIsLogIn={setIsLogIn} />
-            )}
-
-
-            <div className="debug">
-                <button type="button" onClick={() => (setIsLogIn(!isLogIn))}>
-                    {isLogIn ? "登出" : "跳過登入"}
-                </button>
-                <button type="button" onClick={() => (checkLogin())}>確認是否登入過</button>
-                <p>{isCheckLogin }</p>
+              <div className="ver">  Ver 0.3 </div>
             </div>
-
-            <div className="ver">  Ver 0.2 </div>
-
         </div>
     );
     

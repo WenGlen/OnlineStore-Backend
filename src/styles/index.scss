@@ -8,7 +8,7 @@
     position: fixed;
     top: 0;
     right: 0;
-    width: 160px;
+    width: 140px;
 
     display: flex;
     flex-direction: column;
@@ -110,6 +110,7 @@ html, body {
 /* ====== 基本元件 ======*/
 h1{
     margin: 8px 0 0 0;
+    text-align: center;
 }
 
 p{
@@ -285,6 +286,16 @@ input{
     overflow-y: auto;   
     overflow-x: hidden;
 
+    @media (max-width: 1080px) {
+
+        justify-content: start;
+
+    }
+
+}
+
+.layout-center{
+    margin: auto ;
 }
 
 .RWDlayout{
@@ -384,7 +395,7 @@ input{
 }
 
 .first-time-loading{
-    height: 273px;
+    height: 300px;
     padding: 12px;
     display: flex;
     flex-direction: column;

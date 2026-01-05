@@ -279,13 +279,18 @@ export default function BackendManagement({ url, path }){
     //====== 實際回傳內容 ======
     return (
     <>
+                
+
         {firstTimeLoading ? (
-            <div className="panel login-panel first-time-loading">
-                <div className="loading-animation">
+            <div className="flex-layout">
+                <div className="panel login-panel first-time-loading">
+                    <div className="loading-animation">
+                    </div>
+                    資料讀取中...
                 </div>
-                資料讀取中...
             </div>
         ): (
+            
             <div className="RWDlayout">
                 <div className="debug hidden">
                     <p>mod: {mod}</p>

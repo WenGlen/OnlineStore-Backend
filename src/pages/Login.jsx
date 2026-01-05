@@ -70,6 +70,7 @@ export default function Login({ url, path, setIsLogIn }) {
             </div>
 
         </div>
+
     );
 }
 
