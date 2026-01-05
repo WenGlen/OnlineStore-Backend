@@ -8,12 +8,20 @@
     position: fixed;
     top: 0;
     right: 0;
-    width: 120px;
+    width: 160px;
 
-    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    background-color: rgba(0, 0, 0, 0.75);
     color: white;
+    border-radius: 0 0 0 4px;
     z-index: 100;
     padding: 8px;
+    text-align: center;
+
+    font-size: 0.75rem;
     p{
         margin: 0;
     }

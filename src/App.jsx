@@ -2,6 +2,7 @@ import { useState } from 'react'
 import BackendManagement from './pages/BackendManagement'
 import Login from './pages/Login'
 
+import axios from 'axios'
 
 
 
@@ -17,11 +18,40 @@ function App(){
     // ====== 登入狀態 ======
     const [isLogIn, setIsLogIn] = useState(false)
 
+    const [isCheckLogin, setIsCheckLogin] = useState("尚未確認");
+
+
+    async function checkLogin() {
+        try {
+          const token = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("GlenToken="))
+            ?.split("=")[1];
+          console.log(token);
+          axios.defaults.headers.common.Authorization = token;
+    
+          const res = await axios.post(`${url}/api/user/check`);
+          console.log(res);
+          setIsCheckLogin("有登入過 (有token)");
+        } catch (error) {
+          console.error(error);
+          setIsCheckLogin("沒有登入過");
+        }
+      }
+
 
     // ====== 實際回傳內容 ======
     return (
         <div className="page-container">
             <h1>某電商後台管理系統</h1>
+
+            <div className="debug">
+                <button type="button" onClick={() => (setIsLogIn(!isLogIn))}>
+                    {isLogIn ? "登出" : "跳過登入"}
+                </button>
+                <button type="button" onClick={() => (checkLogin())}>確認是否登入過</button>
+                <p>{isCheckLogin }</p>
+            </div>
 
             {isLogIn ?(
                 <BackendManagement url={url} path={path}/>

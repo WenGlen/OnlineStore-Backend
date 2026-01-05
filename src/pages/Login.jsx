@@ -12,7 +12,7 @@ export default function Login({ url, path, setIsLogIn }) {
     const [failed, setFailed] = useState(false);
 
     async function login() {
-        console.log(user);
+        //console.log(user);
         setLoading(true);
         try {
             const res = await axios.post(`${url}/admin/signin`, user);
@@ -24,13 +24,11 @@ export default function Login({ url, path, setIsLogIn }) {
             //通知父組件登入成功
             setIsLogIn(true);
 
-            setLoading(false);
-
         } catch (error) {
             console.log(error);
-            setLoading(false);
             setFailed(true);
         }
+        setLoading(false);
     }
 
     function eventHandlerUser(e) {
