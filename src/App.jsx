@@ -17,7 +17,6 @@ function App(){
 
     // ====== 登入狀態 ======
     const [isLogIn, setIsLogIn] = useState(false)
-
     const [isCheckLogin, setIsCheckLogin] = useState("尚未確認");
 
 
@@ -45,6 +44,15 @@ function App(){
         <div className="page-container">
             <h1>某電商後台管理系統</h1>
 
+
+
+            {isLogIn ?(
+                <BackendManagement url={url} path={path}/>
+            ):(
+                <Login url={url} path={path} setIsLogIn={setIsLogIn} />
+            )}
+
+
             <div className="debug">
                 <button type="button" onClick={() => (setIsLogIn(!isLogIn))}>
                     {isLogIn ? "登出" : "跳過登入"}
@@ -53,11 +61,7 @@ function App(){
                 <p>{isCheckLogin }</p>
             </div>
 
-            {isLogIn ?(
-                <BackendManagement url={url} path={path}/>
-            ):(
-                <Login url={url} path={path} setIsLogIn={setIsLogIn} />
-            )}
+            <div className="ver">  Ver 0.2 </div>
 
         </div>
     );

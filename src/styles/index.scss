@@ -27,6 +27,20 @@
     }
 }
 
+.ver {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 4px;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.75);
+    color: white;
+    border-radius: 0 4px 0 0 ;
+    z-index: 100;
+
+    font-size: 0.75rem;
+}
+
 /* ====== 基本設定 ======*/
 :root{
     --color-DEFAULT: #6cb1c9;
