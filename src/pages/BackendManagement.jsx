@@ -6,6 +6,8 @@ import ModButton from '../components/ModButton';
 
 
 export default function BackendManagement({ url, path }){
+    //API文件： https://hexschool.github.io/ec-courses-api-swaggerDoc
+    //API申請平台：https://ec-course-api.hexschool.io/
 
     
     //====== 初始設定，宣告模式＆產品列表 ======
