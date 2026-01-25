@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import BackendManagement from './pages/BackendManagement'
 import Login from './pages/Login'
 
@@ -17,7 +17,6 @@ function App(){
 
     // ====== 登入狀態 ======
     const [isLogIn, setIsLogIn] = useState(false)
-    const [isCheckLogin, setIsCheckLogin] = useState("尚未確認");
 
 
     async function checkLogin() {
@@ -26,17 +25,25 @@ function App(){
             .split("; ")
             .find((row) => row.startsWith("GlenToken="))
             ?.split("=")[1];
-          console.log(token);
+          //console.log(token);
           axios.defaults.headers.common.Authorization = token;
+          if (!token) return;
     
           const res = await axios.post(`${url}/api/user/check`);
-          console.log(res);
-          setIsCheckLogin("有登入過 (有token)");
+          //console.log(res);
+          setIsLogIn(true);
         } catch (error) {
-          console.error(error);
-          setIsCheckLogin("沒有登入過");
+          //console.error(error);
+          setIsLogIn(false);
         }
       }
+
+    // 一進網站先檢查是否登入過
+    useEffect(() => {
+      if(!isLogIn) {
+        checkLogin();
+      }
+    }, []);
 
 
     // ====== 實際回傳內容 ======
@@ -46,21 +53,18 @@ function App(){
               <h1>某電商後台管理系統</h1>
 
               {isLogIn ?(
-                  <BackendManagement url={url} path={path}/>
+                  <BackendManagement url={url} path={path} setIsLogIn={setIsLogIn}/>
               ):(
                   <Login url={url} path={path} setIsLogIn={setIsLogIn} />
               )}
 
-
-              <div className="debug">
-                  <button type="button" onClick={() => (setIsLogIn(!isLogIn))}>
-                      {isLogIn ? "登出" : "跳過登入"}
-                  </button>
-                  <button type="button" onClick={() => (checkLogin())}>確認是否登入過</button>
-                  <p>{isCheckLogin }</p>
+              <div className="ver">  
+                <p>開發用</p>
+                <button type="button" className={isLogIn ? "" : "disabled"} onClick={() => (setIsLogIn(false))}>
+                  登出                
+                </button>
+                <p>Ver 0.11</p>
               </div>
-
-              <div className="ver">  Ver 0.4 </div>
             </div>
         </div>
     );

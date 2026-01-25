@@ -1,18 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios'
 
-import ModButton from '../components/ModButton';
+
+import ModButton from '../components/elements/ModButton';
+import FoucsPanel from '../components/FoucsPanel';
+import EditPanel from '../components/EditPanel';
+import ProductsList from '../components/ProductsList';
 
 
 
-export default function BackendManagement({ url, path }){
+export default function BackendManagement({ url, path, setIsLogIn }){
     //API文件： https://hexschool.github.io/ec-courses-api-swaggerDoc
     //API申請平台：https://ec-course-api.hexschool.io/
 
     
     //====== 初始設定，宣告模式＆產品列表 ======
 
-    const [mod, setMod]=useState("view");
+    const [mod, setMod]=useState("view");``
     const [products, setProducts]=useState([])
     const [firstTimeLoading, setFirstTimeLoading]=useState(true);
 
@@ -29,6 +33,8 @@ export default function BackendManagement({ url, path }){
         );
         if (token) {
             axios.defaults.headers.common['Authorization'] = token;
+        }else{
+            setIsLogIn(false);
         }
     }
 
@@ -49,21 +55,55 @@ export default function BackendManagement({ url, path }){
                     product.imageUrl4 = imagesArray[3] || "";
                     product.imageUrl5 = imagesArray[4] || "";
                 });
-                setProducts(resProducts);
-                console.log(resProducts);
+                // 對產品進行排序：先按分類排序，再按標題排序
+                const sortedProducts = sortProductsByCategoryAndTitle(resProducts);
+                setProducts(sortedProducts);
+                //console.log(sortedProducts);
                 setFirstTimeLoading(false);
             } else {
-                console.log('API 回應中沒有 products 資料');
+                //console.log('API 回應中沒有 products 資料');
                 setProducts([]);
             }
         } catch (error) {
-            console.log(error);
+            //console.log(error);
             setProducts([]); 
         }
         setMod("view");
         resetEditingProduct();
     }
-    
+
+    // 排序功能：先抓所有分類 categories 做排序，然後每個類別裡用title 做中文字筆畫排序
+    function sortProductsByCategoryAndTitle(products) {
+        // 先複製陣列避免直接修改原始資料
+        const sortedProducts = [...products];
+        
+        // 先按分類（category）排序，使用中文排序
+        sortedProducts.sort((a, b) => {
+            const categoryA = a.category || '';
+            const categoryB = b.category || '';
+            
+            // 先比較分類
+            const categoryCompare = categoryA.localeCompare(categoryB, 'zh-CN', { 
+                numeric: true,
+                sensitivity: 'base'
+            });
+            
+            // 如果分類相同，則按標題（title）排序
+            if (categoryCompare === 0) {
+                const titleA = a.title || '';
+                const titleB = b.title || '';
+                return titleA.localeCompare(titleB, 'zh-CN', { 
+                    numeric: true,
+                    sensitivity: 'base'
+                });
+            }
+            
+            return categoryCompare;
+        });
+        
+        return sortedProducts;
+    }
+
     // 當切換到新增模式時，重置表單
     useEffect(() => {
         if (mod === "add") {
@@ -76,26 +116,34 @@ export default function BackendManagement({ url, path }){
     const [focus, setFocus]=useState({});
     
     //====== 刪除功能 ======
-    const [deleteTargetId, setDeleteTargetId]=useState("");
-    const [deleteing, setDeleteing]=useState(false);
+    const [deleteTargetId, setDeleteTargetId] = useState("");
+    const [deleting, setDeleting] = useState(false);
 
-    function DeleteMod(id) {  
+    function DeleteMod(id) {
         setMod("delete");
         setDeleteTargetId(id);
     }
 
     async function deleteProduct(id) {
-        setDeleteing(true);
+        setDeleting(true);
         try {            
             const res = await axios.delete (`${url}/api/${path}/admin/product/${id}`);
-            console.log(res.data.message);
+            //console.log(res.data.message);
             getProducts();
             setFocus({});
-        } catch (error) {
-            console.log(error);
             setMod("view");
+            setDeleteTargetId("");
+        } catch (error) {
+            //console.log(error);
+            setMod("view");
+        } finally {
+            setDeleting(false);
         }
-        setDeleteing(false);
+    }
+
+    function handleCancelDelete() {
+        setMod("view");
+        setDeleteTargetId("");
     }
 
 
@@ -120,6 +168,7 @@ export default function BackendManagement({ url, path }){
             imageUrl4: "",
             imageUrl5: "",
             stock: 0,
+            soldQuantity: 0,
         });
         setEditingProductIsEnabled(1);
         setInputError("");
@@ -131,7 +180,7 @@ export default function BackendManagement({ url, path }){
         // 處理所有欄位
         setEditingProduct({
             ...editingProduct,
-            [name]: name === "origin_price" || name === "price" || name === "stock" ? parseInt(value) || 0 : value
+            [name]: name === "origin_price" || name === "price" || name === "stock" || name === "soldQuantity" ? parseInt(value) || 0 : value
         });
     }
 
@@ -147,6 +196,7 @@ export default function BackendManagement({ url, path }){
             origin_price: item.origin_price || 0,
             price: item.price || 0,
             stock: item.stock || 0,
+            soldQuantity: item.soldQuantity || 0,
             unit: item.unit || "個", // 單位預設為"個"
             description: item.description || "",
             content: item.content || "",
@@ -170,7 +220,7 @@ export default function BackendManagement({ url, path }){
     async function uploadProduct(mod) { // mod: "add" or "update"
 
         if(mod != "add" && mod != "update") {
-            console.log("upload mod is not valid");
+            //console.log("upload mod is not valid");
             return;
         }
 
@@ -187,7 +237,7 @@ export default function BackendManagement({ url, path }){
         const uploadItem = prepareProductData(editingProduct, editingProductIsEnabled);
         
         try {   
-            console.log(`${mod}Item=`,uploadItem);
+            //console.log(`${mod}Item=`,uploadItem);
             let res;
             if(mod === "add") {
                 res = await axios.post (`${url}/api/${path}/admin/product`, uploadItem)
@@ -195,16 +245,15 @@ export default function BackendManagement({ url, path }){
                 res = await axios.put (`${url}/api/${path}/admin/product/${focus.id}`, uploadItem)
             }
                         
-            console.log(res.data.message);
+            //console.log(res.data.message);
             getProducts();
         } catch (error) {
-            console.log(error);
+            //console.log(error);
         }
         
         setUploading(false);
 
     }
-
 
 
     //====== 檢查功能 ======
@@ -219,7 +268,7 @@ export default function BackendManagement({ url, path }){
 
     function checkInputError() {
         // 可留白的欄位
-        const excludeFields = ['origin_price', 'price', 'stock', 'imageUrl1', 'imageUrl2', 'imageUrl3', 'imageUrl4', 'imageUrl5'];
+        const excludeFields = ['origin_price', 'price', 'stock', 'soldQuantity', 'imageUrl1', 'imageUrl2', 'imageUrl3', 'imageUrl4', 'imageUrl5'];
 
         for (const [key, value] of Object.entries(editingProduct)) {
             // 跳過不需要檢查的欄位
@@ -231,11 +280,11 @@ export default function BackendManagement({ url, path }){
                 return errorType.empty;
             }
         }
-        if( typeof editingProduct.origin_price !== "number" || typeof editingProduct.price !== "number" || typeof editingProduct.stock !== "number" ) {
+        if( typeof editingProduct.origin_price !== "number" || typeof editingProduct.price !== "number" || typeof editingProduct.stock !== "number" || typeof editingProduct.soldQuantity !== "number" ) {
             return errorType.notNumber;
         }
 
-        if(editingProduct.origin_price < 0 || editingProduct.price < 0 || editingProduct.stock < 0) {
+        if(editingProduct.origin_price < 0 || editingProduct.price < 0 || editingProduct.stock < 0 || editingProduct.soldQuantity < 0) {
             return errorType.negative;
         }
 
@@ -247,7 +296,6 @@ export default function BackendManagement({ url, path }){
         return ""
 
     }
-
 
     //====== 上傳前轉型 ======
     function prepareProductData(product, isEnabled) {
@@ -272,15 +320,22 @@ export default function BackendManagement({ url, path }){
         return { data: { ...productData, imagesUrl: imagesUrlArray } };
     }
 
-    
+    //======  RWD變彈窗，偵測用 ======
+    const [WindowWidth, setWindowWidth]=useState(window.innerWidth);
 
+    useEffect(() => {
+        function handleResize() {
+            setWindowWidth(window.innerWidth);
+            //console.log(window.innerWidth);
+        }
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
 
     //====== 實際回傳內容 ======
     return (
     <>
-                
-
         {firstTimeLoading ? (
             <div className="flex-layout">
                 <div className="panel login-panel first-time-loading">
@@ -294,54 +349,21 @@ export default function BackendManagement({ url, path }){
             <div className="RWDlayout">
                 <div className="debug hidden">
                     <p>mod: {mod}</p>
-                    <button type="button" onClick={() => {setMod("view"); setDeleteTargetId(""); resetEditingProduct();}}>重置</button>
+                    <button type="button" onClick={() => {setMod("view"); resetEditingProduct();}}>重置</button>
                 </div>
                 {/*產品列表*/}
                 <div className="panel products-panel">
-                    <div className="panel-frame products">
-                    
-                        <table>
-                            <thead>
-                                <tr className="tr">
-                                    <th></th>
-                                    <th className="th-title">產品名稱</th>
-                                    <th>分類</th>
-                                    <th>售價</th>
-                                    <th>庫存</th>
-                                    <th>上架</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {products.map((product, index) => (
-                                        <tr key={product.id} className={`tr ${product.is_enabled ? "" : "not-enabled"}`}>
-                                            <td className="td"> {index + 1}</td>
-                                            <td className="td td-title " > {product.title}</td>
-                                            <td className="td td-category"> {product.category}</td>
-                                            <td className="td td-price"> {product.price} <span className="unit">元</span></td>
-                                            <td className="td td-number"> {product.stock} <span className="unit">{product.unit}</span></td>
-                                            <td className="td td-boolean"> {product.is_enabled ? "✔" : "✖"}</td>
-                                            <td className="td td-tools">
-                                                <div className="tools-container">
-                                                    <ModButton type="view" mod={mod} action={() => {setFocus(product);}} />
-                                                    <ModButton 
-                                                        type="delete" 
-                                                        mod={mod} 
-                                                        id={product.id} 
-                                                        targetId={deleteTargetId} 
-                                                        action={() => {DeleteMod(product.id);}} 
-                                                        onCancel={() => {setMod("view");setDeleteTargetId("");}}
-                                                        onConfirmDelete={(id) => {deleteProduct(id);}}
-                                                        deleteing={deleteing}
-                                                    />
-                                                    <ModButton type="update" mod={mod} action={() => {editProduct(product);}} />
-                                                </div>
-                                            </td>
-                                        </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <ProductsList
+                        products={products}
+                        mod={mod}
+                        setFocus={setFocus}
+                        deleteTargetId={deleteTargetId}
+                        onDeleteMod={DeleteMod}
+                        onCancelDelete={handleCancelDelete}
+                        onConfirmDelete={deleteProduct}
+                        deleting={deleting}
+                        editProduct={editProduct}
+                    />
                     <div className="products-get-buttons">
                         <ModButton type="get" mod={mod} action={() => {getProducts();}} />
                         <ModButton type="add" mod={mod} action={() => {setMod("add");}} />
@@ -349,208 +371,26 @@ export default function BackendManagement({ url, path }){
                 </div>
 
                 {/* 新增產品模式&詳細內容 */}
-                <div className={`panel ${mod=="add" ? "add" : mod=="update" ? "update" : ""}`}>
-                    {mod!="add" && mod!="update" ? ( 
-                    <>
-                        {/* 非新增時的詳細內容 */}
-                        {!focus.id ? (
-                            <div className="focus-panel no-focus">
-                                <p> 點擊「操作」按鈕，可查看或編輯產品詳細資訊<br/>點擊「新增產品」按鈕，可新增產品</p>
-                            </div>
+                <div className={`RWD-overlay ${(mod=="view" && !focus.id && WindowWidth < 1080)  ?  "hidden" : ""}`}>
+                    <div className="RWD-container">
+                        <div className="RWD-content">
+                        {mod!="add" && mod!="update" ? ( 
+                            <FoucsPanel focus={focus} setFocus={setFocus} />
                         ) : (
-                            <div className="focus-panel">
-                                <div className="focus-panel-content">
-                                    <div className="description">
-                                        <h3>{focus.title}</h3>
-                                        <p className="muted"> {focus.content}</p>
-                                        <p>{focus.description}</p>
-                                    </div>
-
-                                    <div className="infos">  
-                                        <div className="info"> 
-                                            <div className="flex-row-between py-xs">                                    
-                                                <div> 原價：</div><div>{focus.origin_price} 元</div>
-                                            </div>
-                                            <div className="flex-row-between py-xs">                                    
-                                                <div> 折扣：</div><div>{Math.round(focus.price/focus.origin_price * 100)} %</div>
-                                            </div>
-                                            <div className="flex-row-between py-xs">                                    
-                                                <div> 售價：</div><div>{focus.price} 元</div>
-                                            </div>
-
-                                        </div> 
-                                        <div className="info">
-                                            <div className="flex-row-between py-xs">                                    
-                                                <div> 是否啟用：</div><div>{focus.is_enabled ? "上架" : "隱藏"}</div>
-                                            </div>
-                                            <div className="flex-row-between py-xs">                                    
-                                                <div> 分類：</div><div>{focus.category}</div>
-                                            </div>
-                                            <div className="flex-row-between py-xs">                                    
-                                                <div> 庫存：</div><div>{focus.stock} {focus.unit}</div>
-                                            </div>
-
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* 圖片區域 */}
-                                <div className="panel-frame focus">
-                                    <div className="image-list-container">
-                                        <div className="image-list-item">
-                                            <p>主要圖片</p>
-                                            <div className="image-container">
-                                                {focus.imageUrl && 
-                                                    <img src={focus.imageUrl} alt={focus.imageUrl}/>
-                                                }
-                                            </div>
-                                        </div>
-                                        {[1, 2, 3, 4, 5].map(num => (
-                                            <div key={num} className="image-list-item">
-                                                <p>圖片 {num}</p>
-                                                <div className="image-container">
-                                                    {focus[`imageUrl${num}`] ? (
-                                                        <img src={focus[`imageUrl${num}`]} alt={focus[`imageUrl${num}`]}/>
-                                                    ):( 
-                                                        <p>無</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                            </div>
-
+                            <EditPanel editingProduct={editingProduct} 
+                                        editingProductIsEnabled={editingProductIsEnabled} setEditingProductIsEnabled={setEditingProductIsEnabled}
+                                        eventHandlereditingProduct={eventHandlereditingProduct} 
+                                        mod={mod} setMod={setMod} 
+                                        setFocus={setFocus} 
+                                        uploading={uploading} 
+                                        resetEditingProduct={resetEditingProduct} 
+                                        inputError={inputError} 
+                                        uploadProduct={uploadProduct}
+                                        url={url}
+                                        path={path} />
                         )}
-                    </>
-                    ) : (
-                    <>
-                        <div className="focus-panel">
-                            {/*文字資訊*/}    
-                            <div className="edit-panel-content">
-                                {/*產品資訊*/}
-                                <div className="edit-product-form">
-                                    <div className="edit-product-item">
-                                        <label htmlFor="title">品名</label>
-                                        <input type="text" placeholder="請輸入產品名稱" name="title" 
-                                            value={editingProduct.title} onChange={(e) => eventHandlereditingProduct(e)} />
-                                    </div>
-                                    <div className="edit-product-item">
-                                        <label htmlFor="content">規格</label>
-                                        <input type="text" placeholder="請輸入內容" name="content" 
-                                            value={editingProduct.content} onChange={(e) => eventHandlereditingProduct(e)} />
-                                    </div>
-                                    <div className="edit-product-item">
-                                        <label htmlFor="description">描述</label>
-                                        <input type="text" placeholder="請輸入描述" name="description" 
-                                            value={editingProduct.description} onChange={(e) => eventHandlereditingProduct(e)} />
-                                    </div>
-                                </div>
-                                {/*其他資訊*/}
-                                <div className="flex-row-between gap-md align-end">
-                                    <div className="edit-product-form">
-
-                                        <div className="edit-product-item">
-                                            <label htmlFor="origin_price">原價</label>
-                                            <input type="number" placeholder="請輸入原價" name="origin_price" 
-                                                value={editingProduct.origin_price || ""} onChange={(e) => eventHandlereditingProduct(e)} />
-                                        </div>
-                                        <div className="edit-product-item">
-                                            <label htmlFor="price">售價</label>
-                                            <input type="number" placeholder="請輸入售價" name="price" 
-                                                value={editingProduct.price || ""} onChange={(e) => eventHandlereditingProduct(e)} />
-                                        </div>
-                                    </div>
-                                    <div className="edit-product-form">
-                                        <div className="edit-product-item">   
-                                            <label htmlFor="is_enabled">是否啟用</label>
-                                            <button type="button" className={`light ${editingProductIsEnabled === 1 ? "active" : ""}`} 
-                                                    onClick={() => {setEditingProductIsEnabled(1);}}>
-                                                上架
-                                            </button>
-                                            <button type="button" className={`light ${editingProductIsEnabled === 1 ? "" : "active"}`} 
-                                                    onClick={() => {setEditingProductIsEnabled(0);}}>
-                                                隱藏
-                                            </button>
-                                        </div>
-                                        <div className="edit-product-item">
-                                            <label htmlFor="category">分類</label>
-                                            <input type="text" placeholder="請輸入分類" name="category" 
-                                                value={editingProduct.category} onChange={(e) => eventHandlereditingProduct(e)} />
-                                        </div>
-                                        <div className="edit-product-item">
-                                            <label htmlFor="stock">庫存</label>
-                                            <input type="number" placeholder="請輸入庫存" name="stock" 
-                                                value={editingProduct.stock || ""} onChange={(e) => eventHandlereditingProduct(e)} />
-                                            <input type="text" placeholder="單位" name="unit" className="unit-input"
-                                                value={editingProduct.unit || ""} onChange={(e) => eventHandlereditingProduct(e)} />
-                                        </div>
-
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            {/*圖片連結*/}
-                            <div className={`panel-frame ${mod=="update" ? "update" : "add"}`}>
-                                <div className="edit-product-form">
-                                    <div className="image-list-container">
-                                        <div className="image-list-item">
-                                            <p>主要圖片（必填）</p>
-                                            <input type="text" placeholder="主要圖片網址" name="imageUrl" 
-                                                value={editingProduct.imageUrl} onChange={(e) => eventHandlereditingProduct(e)} />
-                                            <div className="image-container">
-                                                {editingProduct.imageUrl && 
-                                                    <img src={editingProduct.imageUrl} alt={editingProduct.imageUrl}/>
-                                                }
-                                            </div>
-                                        </div>
-                                        {[1, 2, 3, 4, 5].map(num => (
-                                            <div key={num} className="image-list-item">
-                                                <p>圖片{num}（可空白）</p>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder={`圖片網址${num} (可空白)`} 
-                                                    name={`imageUrl${num}`} 
-                                                    value={editingProduct[`imageUrl${num}`] || ""} 
-                                                    onChange={(e) => eventHandlereditingProduct(e)} 
-                                                />
-                                                <div className="image-container">
-                                                    {editingProduct[`imageUrl${num}`] && 
-                                                        <img src={editingProduct[`imageUrl${num}`]} alt={editingProduct[`imageUrl${num}`]}/>
-                                                    }
-                                                </div>
-                                            </div>
-                                        ))}
-                                        
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="panel-edit-buttons">
-                                <p className="error text-right">{inputError || "\u00A0"}</p>
-                                <div className="flex-row-between">
-                                    <button type="button" className={`light ${uploading ? "disabled" : ""}`}
-                                            onClick={() => {resetEditingProduct(); setMod("view"); setFocus({});}}>
-                                        {mod === "update" ? "取消編輯（產品不會儲存）" : "取消新增（產品不會儲存）"}
-                                    </button>
-
-                                    <button type="button" className={`${uploading ? "disabled" : ""}`}
-                                            onClick={() => (uploadProduct(mod))}>
-                                        {uploading 
-                                            ? (mod === "update" ? "更新產品中..." : "加入新產品中...") 
-                                            : (mod === "update" ? "更新產品" : "加入新產品")}
-                                    </button>
-
-                                </div>
-                            </div>
-
                         </div>
-
-                    </>
-
-                    )}
+                    </div>
                 </div>
                 
             </div>  

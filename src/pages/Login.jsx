@@ -11,11 +11,13 @@ export default function Login({ url, path, setIsLogIn }) {
     const [loading, setLoading] = useState(false);
     const [failed, setFailed] = useState(false);
 
-    async function login() {
+    async function login(e) {
+        e.preventDefault();
         //console.log(user);
         setLoading(true);
         try {
             const res = await axios.post(`${url}/admin/signin`, user);
+            //console.log("res", res);
             const { token, expired } = res.data;
             //存cookie
             document.cookie = `GlenToken=${token};expires=${new Date(expired)};`
@@ -25,7 +27,7 @@ export default function Login({ url, path, setIsLogIn }) {
             setIsLogIn(true);
 
         } catch (error) {
-            console.log(error);
+            //console.log(error);
             setFailed(true);
         }
         setLoading(false);
@@ -41,7 +43,7 @@ export default function Login({ url, path, setIsLogIn }) {
     
     return (
         <div className="panel login-panel">
-            <div className="flex-col">
+            <form className="flex-col" onSubmit={(e) => {login(e)}}>
                 <div className="input-group">  
                     <label htmlFor="email">信箱</label>
                     <input 
@@ -63,11 +65,10 @@ export default function Login({ url, path, setIsLogIn }) {
                     />
                 </div>
                 <p className="error">{failed ? "登入失敗，請檢查帳號密碼" : "\u00A0" }</p>
-                <button type="button" id="login" className={loading ? "disabled" : ""} onClick={() => login()}>
+                <button type="submit" id="login" className={loading ? "disabled" : ""}>
                     {loading ? "登入中..." : "登入"}
                 </button>
-
-            </div>
+            </form>
 
         </div>
 

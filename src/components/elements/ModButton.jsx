@@ -1,9 +1,19 @@
 
-import viewIcon from '../img/view.png';
-import updateIcon from '../img/update.png';
-import deleteIcon from '../img/delete.png';
+import viewIcon from '../../img/view.png';
+import updateIcon from '../../img/update.png';
+import deleteIcon from '../../img/delete.png';
 
-export default function ModButton({ type, mod, action ,id , targetId, onCancel, onConfirmDelete, deleteing}) {
+export default function ModButton({ 
+    type, 
+    mod, 
+    action,
+    id, 
+    targetId, 
+    onCancel, 
+    onConfirmDelete, 
+    deleteing
+
+}) {
 
 
     const typeText = {
